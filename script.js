@@ -27,7 +27,7 @@ if (location.href.startsWith(targetURL)) {
       // --- 1. ВСТАВКА ИНТЕРФЕЙСА ---
       const versionTarget = document.querySelector('.me-auto');
       if (versionTarget) {
-          versionTarget.insertAdjacentHTML('beforeend', ` <span style="color: #b9b9b9; font-size: 12px; font-weight: 400;">r3 v3.2</span>`);
+          versionTarget.insertAdjacentHTML('beforeend', ` <span style="color: #b9b9b9; font-size: 12px; font-weight: 400;">r3 v3.2 Zopa</span>`);
       }
 
       const menuScheduling = document.querySelector('#sidebar-menu-scheduling');
