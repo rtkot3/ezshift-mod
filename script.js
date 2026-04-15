@@ -24,10 +24,36 @@ if (location.href.startsWith(targetURL)) {
   function r3_script() {
     if (!document.getElementById('r3_find')) {
 
+      // --- 0. Настройка EZShift ---
+
+      const r3Version = "3.3";
+
+      const styleTag = document.createElement('style');
+      styleTag.innerHTML = `
+      #MonthCalCard {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch; /* Для плавной прокрутки на iOS */
+      }
+      `;
+
+      function handleResize(e) {
+          if (e.matches) {
+              document.head.appendChild(styleTag); // Добавляем стили
+          } else {
+              if (styleTag.parentNode) {
+                  document.head.removeChild(styleTag); // Удаляем стили
+              }
+          }
+      }
+
+      const mq = window.matchMedia('(max-width: 380px)');
+      mq.addEventListener('change', handleResize);
+      handleResize(mq);
+
       // --- 1. ВСТАВКА ИНТЕРФЕЙСА ---
       const versionTarget = document.querySelector('.me-auto');
       if (versionTarget) {
-          versionTarget.insertAdjacentHTML('beforeend', ` <span style="color: #b9b9b9; font-size: 12px; font-weight: 400;">r3 v3.2</span>`);
+          versionTarget.insertAdjacentHTML('beforeend', ` <br><a href="https://github.com/rtkot3/ezshift-mod" class="gh-link">GitHub</a><span style="color: #b9b9b9; font-size: 12px; font-weight: 400;"> r3 v${r3Version}</span></div>`);
       }
 
       const menuScheduling = document.querySelector('#sidebar-menu-scheduling');
@@ -520,7 +546,30 @@ if (location.href.startsWith(targetURL)) {
       });
 
       console.clear();
-      console.log("[r3 v3.2] Script loaded successfully!");
+      console.log(`[r3 v${r3Version}] Script loaded successfully!`);
     }
   }
 }
+
+
+// /// --- 0. ЗАГРУЗКА СКРИПТА НА НУЖНОЙ СТРАНИЦЕ ---
+
+// const targetURL = "https://app.ezshift.co.il/pages/ScheduleMy.aspx";
+
+// // Проверяем, совпадает ли адрес страницы
+// if (location.href.startsWith(targetURL)) {
+//   console.log('Целевая страница обнаружена. Загружаем скрипт...');
+
+//   fetch('https://raw.githubusercontent.com/rtkot3/ezshift-mod/main/script.js')
+//     .then(response => {
+//       if (!response.ok) throw new Error(`Ошибка сети: ${response.status}`);
+//       return response.text();
+//     })
+//     .then(code => {
+//       // Выполняем полученный код
+//       eval(code);
+//     })
+//     .catch(err => {
+//       console.error('Ошибка загрузки модификации:', err);
+//     });
+// }
