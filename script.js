@@ -89,7 +89,7 @@
               const sidebar = document.querySelector('.sidebar-content');
               if (sidebar) {
                   const modUI = `
-                  <div class="sidebar-section ms-3 mx-3 mb-2 mt-2">
+                  <div class="sidebar-section ms-3 mx-3 mt-2" style="margin-bottom: 20px">
                     <div class="mb-2">
                       <span class="fw-semibold fs-lg p-0">Find other people</span>
                       <div class="float-end ps-1">
@@ -363,7 +363,7 @@
               };
 
               if (uiEls.team) { uiEls.team.innerText = "No Data"; uiEls.team.style.color = "inherit"; }
-              if (uiEls.imposterList) uiEls.imposterList.innerHTML = '<div class="d-flex mb-1" style="justify-content: space-between;"><span>No Data</span></div>';
+              if (uiEls.imposterList) uiEls.imposterList.innerHTML = '<div class="mb-1"><span>No Data</span></div>';
               
               btn.style.opacity = "0.6";
               btn.style.pointerEvents = "none";
@@ -532,7 +532,7 @@
 
             // 4. Отрисовка
             if (imposters.length === 0) {
-                listContainer.innerHTML = '<span>No Imposters ...</span>';
+                listContainer.innerHTML = '<div class="mb-1"><span>No Imposters ...</span></div>';
             } else {
                 imposters.forEach(imp => {
                     const mainShiftData = imp.shifts.find(s => s.area === imp.tempMain);
