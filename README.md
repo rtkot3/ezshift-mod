@@ -15,3 +15,4 @@
 * **Smart 'Imposter' Tracking:** Dynamically filters dates and areas to help identify staff members covering shifts outside their primary responsibilities.
 
 * **Seamless UI Integration:** Injects a responsive, non-intrusive control panel directly into the native EZShift sidebar.
+
