@@ -6,7 +6,7 @@
 
       // --- 1. КОНСТАНТЫ И СОСТОЯНИЕ ---
       const CONFIG = {
-          version: "3.3",
+          version: "3.4",
           darkness: 35,
           repoUrl: "https://github.com/rtkot3/ezshift-mod"
       };
@@ -134,7 +134,7 @@
                   
                         <span class="fs-lg p-0">Statistics:</span>
                   
-                        <div class="p-2 rounded mt-1" style="background-color: #ebebeb">
+                        <div class="p-2 rounded mt-2" style="background-color: #ebebeb">
                           <div class="d-flex" style="justify-content: space-between;">
                             <span>Main Team</span>
                             <span id="r3_team" class="fw-semibold" style="color: inherit;">No Data</span>
@@ -171,7 +171,7 @@
                         </div>
                       
                         <div class="mt-2"><span class="fs-lg p-0">List of possible people:</span></div>
-                        <div id="r3_imposters_list" class="p-2 rounded mt-1 pb-1" style="background-color: #ebebeb">
+                        <div id="r3_imposters_list" class="p-2 rounded mt-2 pb-1" style="background-color: #ebebeb">
                           <div class="d-flex mb-1" style="justify-content: space-between;"></div>
                         </div>
                       </div>
@@ -267,6 +267,27 @@
                   });
               } else {
                   selectEl.innerHTML = '<option value="">No matches</option>';
+              }
+          },
+
+          // Новый метод для фикса бага с двойными сменами
+          fixTableBorders() {
+              const table = document.querySelector('#ShiftsTable');
+              if (!table) return;
+
+              let lastDate = null;
+              for (let row of table.rows) {
+                  // Извлекаем текст даты, например "29/04"
+                  const currentDate = row.cells[1]?.innerText.trim();
+                  
+                  if (currentDate === lastDate) {
+                      // Если дата совпадает с предыдущей строкой — убираем границу
+                      row.style.borderTop = "none";
+                  } else {
+                      // Иначе оставляем стандартную границу
+                      row.style.borderTop = "1px solid #E9ECF5";
+                  }
+                  lastDate = currentDate;
               }
           }
       };
@@ -400,6 +421,9 @@
               
                       UI.updatePeopleSelect(State.peopleData);
                       
+                      // --- НОВОЕ: Автоматически фильтруем зоны для первой загруженной даты ---
+                      document.querySelector('#r3_date_select')?.dispatchEvent(new Event('change'));
+                      
                       if (uiEls.status) {
                           uiEls.status.textContent = document.querySelector('#ScheduleTitle')?.innerHTML || "Active";
                           uiEls.status.style.color = "green";
@@ -465,6 +489,9 @@
                   UI.appendShiftRow(shift.day, shift.month, shift.color, shift.shift);
               });
 
+              // --- ИСПРАВЛЕНИЕ: Убираем границы у одинаковых дат ---
+              UI.fixTableBorders();
+
               document.getElementById('sidebar-close-btn')?.click();
           },
 
@@ -496,6 +523,8 @@
                 "NPEAK": 9,
                 "none": 10
             };
+
+            
 
             // 2. Фильтруем и подготавливаем данные
             let imposters = State.peopleData.filter(person => {
@@ -564,6 +593,55 @@
             }
         },
 
+        onImposterDateChange() {
+              const selectedDate = document.querySelector('#r3_date_select')?.value;
+              const areaSel = document.querySelector('#r3_area_select');
+              if (!selectedDate || !areaSel || !State.peopleData.length) return;
+
+              const areasWithImposters = new Set();
+
+              // Проходим по всем людям и ищем предателей в выбранную дату
+              State.peopleData.forEach(person => {
+                  // 1. Вычисляем основную команду человека
+                  const counts = {};
+                  person.shifts.forEach(s => {
+                      if (s.area !== 'SL' && s.area !== 'ABSENCE') {
+                          counts[s.area] = (counts[s.area] || 0) + 1;
+                      }
+                  });
+                  let mainArea = "";
+                  let max = 0;
+                  for (const a in counts) {
+                      if (counts[a] > max) { max = counts[a]; mainArea = a; }
+                  }
+
+                  // 2. Смотрим его смены в выбранный день
+                  person.shifts.forEach(s => {
+                      if (s.fullDate === selectedDate && s.area !== 'SL' && s.area !== 'ABSENCE') {
+                          // Если его смена не совпадает с основной командой — он предатель в этой зоне
+                          if (s.area !== mainArea) {
+                              areasWithImposters.add(s.area);
+                          }
+                      }
+                  });
+              });
+
+              // 3. Обновляем выпадающий список Area
+              areaSel.innerHTML = "";
+              if (areasWithImposters.size > 0) {
+                  areaSel.disabled = false;
+                  // Сортируем зоны по алфавиту и добавляем в список
+                  areaSel.innerHTML = Array.from(areasWithImposters).sort().map(a => `<option value="${a}">${a}</option>`).join('');
+              } else {
+                  areaSel.disabled = true;
+                  areaSel.innerHTML = '<option value="">No Imposters ...</option>';
+              }
+              
+              // 4. Очищаем визуальный список людей снизу, чтобы не путать пользователя старыми данными
+              const listContainer = document.querySelector('#r3_imposters_list');
+              if (listContainer) listContainer.innerHTML = '<div class="mb-1"><span>Select Date & Area and click Find</span></div>';
+          },
+
           onGotoPerson(e) {
               const name = e.currentTarget.getAttribute('data-name');
               const inputEl = document.querySelector('#r3_input');
@@ -590,21 +668,36 @@
           document.querySelector('#r3_find')?.addEventListener('click', Handlers.onPerformSearch);
           document.querySelector('#r3_input')?.addEventListener('input', Handlers.onSearchInput);
           document.querySelector('#r3_area_find')?.addEventListener('click', Handlers.onFindImposters);
+          document.querySelector('#r3_date_select')?.addEventListener('change', Handlers.onImposterDateChange);
 
           console.clear();
           console.log(`[r3 v${CONFIG.version}] Script loaded and initialized successfully!`);
       }
 
-      // Запуск (ожидание исчезновения спиннера загрузки)
-      if (!Utils.isLoading()) {
-          initializeScript();
-      } else {
+      // 1. Отрисовываем интерфейс моментально, не дожидаясь исчезновения лоадера
+      initializeScript();
+
+      // 2. Находим нашу кнопку
+      const getDataBtn = document.querySelector('#r3_getdata');
+
+      // 3. Если лоадер активен на момент запуска скрипта, блокируем кнопку
+      if (Utils.isLoading() && getDataBtn) {
+          // Визуально глушим кнопку и отключаем клики
+          getDataBtn.style.opacity = "0.5";
+          getDataBtn.style.pointerEvents = "none";
+          
+          // Вешаем наблюдатель, который ждет только исчезновения гифки загрузки
           const observer = new MutationObserver(() => {
               if (!Utils.isLoading()) {
-                  observer.disconnect();
-                  initializeScript();
+                  observer.disconnect(); // Снимаем наблюдатель, как только лоадер пропал
+                  
+                  // Возвращаем кнопке рабочий вид и функционал
+                  getDataBtn.style.opacity = "1";
+                  getDataBtn.style.pointerEvents = "auto";
               }
           });
+          
+          // Наблюдаем за изменениями в body
           observer.observe(document.body, { childList: true, subtree: true });
       }
 
